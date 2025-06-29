@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MasterEverything.AI Calendar Demo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial; margin: 40px; background: #f9f9f9; color: #333; }
+    h1 { color: #444; }
+    input, button { padding: 10px; margin: 5px; }
+    #events { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>📅 MasterEverything.AI Calendar Interface</h1>
+
+  <h3>Create New Event</h3>
+  <input id="title" placeholder="Event title" />
+  <input id="date" type="date" />
+  <input id="startTime" type="time" />
+  <input id="endTime" type="time" />
+  <input id="description" placeholder="Description (optional)" />
+  <button onclick="handleCreateEvent()">Create Event</button>
+
+  <h3>Upcoming Events</h3>
+  <button onclick="fetchEvents()">Refresh Events</button>
+  <ul id="events"></ul>
+
+  <script>
+    async function fetchEvents() {
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        const list = document.getElementById('events');
+        list.innerHTML = '';
+        if (data.success && data.events.length > 0) {
+          data.events.forEach(e => {
+            const item = document.createElement('li');
+            item.textContent = `${e.summary} (${e.start.dateTime || e.start.date})`;
+            list.appendChild(item);
+          });
+        } else {
+          list.innerHTML = '<li>No upcoming events found.</li>';
+        }
+      } catch (err) {
+        console.error('Error fetching events:', err);
+      }
+    }
+
+    async function handleCreateEvent() {
+      const title = document.getElementById('title').value;
+      const date = document.getElementById('date').value;
+      const startTime = document.getElementById('startTime').value;
+      const endTime = document.getElementById('endTime').value;
+      const description = document.getElementById('description').value;
+
+      if (!title || !date || !startTime || !endTime) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, date, startTime, endTime, description })
+        });
+
+        const data = await res.json();
+        alert(data.message || data.error || "Event creation complete.");
+        fetchEvents(); // Refresh list
+      } catch (err) {
+        console.error("Error creating event:", err);
+        alert("Failed to create event.");
+      }
+    }
+
+    // Load events on page load
+    fetchEvents();
+  </script>
+</body>
+</html>
