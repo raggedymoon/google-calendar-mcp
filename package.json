@@ -1,13 +1,10 @@
 {
   "name": "google_calendar_mcp_package",
   "version": "1.0.0",
-  "description": "Google Calendar MCP Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "Adrian Bailey",
-  "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
