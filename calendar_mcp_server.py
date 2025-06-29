@@ -9,6 +9,10 @@ app = Flask(__name__)
 def status():
     return jsonify({"status": "Google Calendar MCP is running"})
 
+@app.route("/api/auth", methods=["GET"])
+def auth_placeholder():
+    return jsonify({"message": "Auth route not implemented – using refresh token"}), 200
+
 @app.route("/add-event", methods=["POST"])
 def add_event():
     try:
