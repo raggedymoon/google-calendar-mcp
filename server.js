@@ -51,7 +51,6 @@ app.get('/api/events', async (req, res) => {
   try {
     console.log('Fetching calendar events...');
     
-    // Get current time and 30 days from now
     const timeMin = new Date().toISOString();
     const timeMax = new Date();
     timeMax.setDate(timeMax.getDate() + 30);
@@ -88,7 +87,6 @@ app.post('/api/events', async (req, res) => {
     
     console.log('Creating event:', { title, date, startTime, endTime });
     
-    // Validate required fields
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({
         success: false,
@@ -164,8 +162,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// ✅ Start server with proper public binding for Railway
+app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 MasterEverything.AI Calendar Server started!');
   console.log(`📅 Server running on http://localhost:${PORT}`);
   console.log(`🔗 Open your browser to see the calendar interface`);
