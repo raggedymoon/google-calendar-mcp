@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  'http://localhost:3000/auth/callback'
+  process.env.GOOGLE_REDIRECT_URI  // <-- Use Railway/production-safe redirect
 );
 
 // Set refresh token
@@ -24,7 +24,7 @@ const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 app.use(express.static('public'));
 app.use(express.json());
 
-// Enable CORS for all routes
+// Enable CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -32,29 +32,27 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'MasterEverything.AI Calendar Server is running',
     timestamp: new Date().toISOString()
   });
 });
 
-// Get calendar events
+// List events
 app.get('/api/events', async (req, res) => {
   try {
-    console.log('Fetching calendar events...');
-    
     const timeMin = new Date().toISOString();
     const timeMax = new Date();
     timeMax.setDate(timeMax.getDate() + 30);
-    
+
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: timeMin,
@@ -64,7 +62,6 @@ app.get('/api/events', async (req, res) => {
       orderBy: 'startTime',
     });
 
-    console.log(`Found ${response.data.items.length} events`);
     res.json({
       success: true,
       events: response.data.items,
@@ -72,7 +69,7 @@ app.get('/api/events', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching events:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: error.message,
       details: 'Failed to fetch calendar events'
@@ -80,20 +77,18 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-// Create calendar event
+// Create event
 app.post('/api/events', async (req, res) => {
   try {
     const { title, date, startTime, endTime, description } = req.body;
-    
-    console.log('Creating event:', { title, date, startTime, endTime });
-    
+
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: title, date, startTime, endTime'
       });
     }
-    
+
     const event = {
       summary: title,
       description: description || '',
@@ -112,8 +107,6 @@ app.post('/api/events', async (req, res) => {
       resource: event,
     });
 
-    console.log('Event created successfully:', response.data.id);
-    
     res.json({
       success: true,
       event: response.data,
@@ -121,7 +114,7 @@ app.post('/api/events', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating event:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: error.message,
       details: 'Failed to create calendar event'
@@ -129,11 +122,11 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
-// Delete calendar event
+// Delete event
 app.delete('/api/events/:eventId', async (req, res) => {
   try {
     const { eventId } = req.params;
-    
+
     await calendar.events.delete({
       calendarId: 'primary',
       eventId: eventId,
@@ -145,14 +138,14 @@ app.delete('/api/events/:eventId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting event:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
 
-// Error handling middleware
+// Error handling
 app.use((error, req, res, next) => {
   console.error('Server error:', error);
   res.status(500).json({
@@ -162,10 +155,9 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ✅ Start server with proper public binding for Railway
+// Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 MasterEverything.AI Calendar Server started!');
   console.log(`📅 Server running on http://localhost:${PORT}`);
-  console.log(`🔗 Open your browser to see the calendar interface`);
-  console.log(`⚡ Ready for Google verification demo!`);
+  console.log('⚡ Ready for Google verification demo!');
 });
