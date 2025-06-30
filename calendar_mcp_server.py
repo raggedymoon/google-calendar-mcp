@@ -21,4 +21,5 @@ def home():
     return jsonify({"message": "Hello from Google Calendar MCP backend!"}), 200
 
 if __name__ == "__main__":
+    print(app.url_map)  # 👈 Add this line
     app.run(debug=False, host="0.0.0.0", port=5000)
