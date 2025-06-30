@@ -1,19 +1,23 @@
-const express = require("express");
-const { google } = require("googleapis");
-const cors = require("cors");
+const express = require('express');
+const { google } = require('googleapis');
+const dotenv = require('dotenv');
+const cors = require('cors');
+
+// Load .env variables locally (has no effect on Railway but helps in dev)
+dotenv.config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
-const SCOPES = process.env.GOOGLE_SCOPES || "https://www.googleapis.com/auth/calendar";
+const SCOPES = process.env.GOOGLE_SCOPES;
 
 if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !REFRESH_TOKEN) {
-  console.error("❌ Missing required environment variables.");
+  console.error("❌ One or more required environment variables are missing.");
   process.exit(1);
 }
 
@@ -22,54 +26,39 @@ const oauth2Client = new google.auth.OAuth2(
   CLIENT_SECRET,
   REDIRECT_URI
 );
+
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+// 🔄 Health Check Endpoint
+app.get('/api/health', (req, res) => {
+  try {
+    res.status(200).send('OK');
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(500).send('Health check failed');
+  }
 });
 
-app.get("/api/events", async (req, res) => {
+// 📅 Calendar Events Fetch Example
+app.get('/api/events', async (req, res) => {
   try {
-    const response = await calendar.events.list({
-      calendarId: "primary",
-      timeMin: new Date().toISOString(),
+    const result = await calendar.events.list({
+      calendarId: 'primary',
       maxResults: 10,
       singleEvents: true,
-      orderBy: "startTime",
+      orderBy: 'startTime',
     });
-    res.json(response.data.items);
-  } catch (error) {
-    console.error("❌ Error fetching events:", error.message);
-    res.status(500).json({ error: "Failed to fetch calendar events" });
+    res.status(200).json(result.data.items);
+  } catch (err) {
+    console.error('Error fetching calendar events:', err);
+    res.status(500).send('Error retrieving calendar events');
   }
 });
 
-app.post("/api/create-event", async (req, res) => {
-  try {
-    const { summary, description, start, end } = req.body;
-
-    const event = {
-      summary,
-      description,
-      start: { dateTime: start, timeZone: "UTC" },
-      end: { dateTime: end, timeZone: "UTC" },
-    };
-
-    const response = await calendar.events.insert({
-      calendarId: "primary",
-      resource: event,
-    });
-
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error("❌ Error creating event:", error.message);
-    res.status(500).json({ error: "Failed to create event" });
-  }
-});
-
-const PORT = process.env.PORT || 5000;
+// 🚀 Launch server on Railway-defined or fallback port
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
