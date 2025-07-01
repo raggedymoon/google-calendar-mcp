@@ -577,13 +577,21 @@ app.get('/demo', (req, res) => {
 
 // Debug OAuth endpoint - forces fresh auth flow
 app.get('/debug-auth', (req, res) => {
+  console.log('=== DEBUG AUTH CALLED ===');
+  console.log('REDIRECT_URI env var:', process.env.REDIRECT_URI);
+  console.log('OAuth2Client redirectUri:', oAuth2Client.redirectUri);
+  
   const scopes = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'];
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: scopes
+    scope: scopes,
+    redirect_uri: process.env.REDIRECT_URI || 'https://google-calendar-mcp-production-9abd.up.railway.app/auth/callback'
   });
-  console.log('Forcing OAuth flow - redirecting to:', authUrl);
+  
+  console.log('Generated auth URL:', authUrl);
+  console.log('=== END DEBUG ===');
+  
   return res.redirect(authUrl);
 });
 
