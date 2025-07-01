@@ -11,15 +11,61 @@ app.use(cors({
   credentials: true
 }));
 
+// Ensure we have a redirect URI - use environment variable or default
+const redirectUri = process.env.REDIRECT_URI || 'https://google-calendar-mcp-production-9abd.up.railway.app/auth/callback';
+
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.REDIRECT_URI
+  redirectUri
 );
 
 if (process.env.GOOGLE_REFRESH_TOKEN) {
   oAuth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
 }
+
+// DEBUG ENDPOINT - Add this to see what's configured
+app.get('/debug-config', (req, res) => {
+  const config = {
+    timestamp: new Date().toISOString(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? 'SET (length: ' + process.env.GOOGLE_CLIENT_ID.length + ')' : 'NOT SET',
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? 'SET (length: ' + process.env.GOOGLE_CLIENT_SECRET.length + ')' : 'NOT SET',
+      GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN ? 'SET (length: ' + process.env.GOOGLE_REFRESH_TOKEN.length + ')' : 'NOT SET',
+      REDIRECT_URI: process.env.REDIRECT_URI || 'USING DEFAULT (callback)',
+      GOOGLE_CALENDAR_ID: process.env.GOOGLE_CALENDAR_ID || 'NOT SET (will use primary)',
+      GOOGLE_SCOPES: process.env.GOOGLE_SCOPES || 'NOT SET (will use default)'
+    },
+    oauth2Client: {
+      clientId: oAuth2Client._clientId ? 'SET' : 'NOT SET',
+      clientSecret: oAuth2Client._clientSecret ? 'SET' : 'NOT SET',
+      redirectUri: oAuth2Client.redirectUri || 'NOT SET',
+      credentials: oAuth2Client.credentials ? Object.keys(oAuth2Client.credentials) : 'NONE'
+    },
+    testUrls: {
+      generateAuthUrl: 'Try generating auth URL...',
+      authUrlGenerated: false,
+      error: null
+    }
+  };
+
+  // Test if we can generate an auth URL
+  try {
+    const testAuthUrl = oAuth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: ['https://www.googleapis.com/auth/calendar']
+    });
+    config.testUrls.authUrlGenerated = true;
+    config.testUrls.authUrl = testAuthUrl;
+  } catch (error) {
+    config.testUrls.error = error.message;
+  }
+
+  res.json(config);
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -136,7 +182,7 @@ app.post('/api/events', async (req, res) => {
   }
 });
 
-// Demo page endpoint - THIS WAS MISSING!
+// Demo page endpoint
 app.get('/demo', (req, res) => {
   const html = `
 <!DOCTYPE html>
@@ -554,7 +600,8 @@ app.get('/', (req, res) => {
       createEvent: 'POST /api/events',
       demo: '/demo',
       auth: '/api/auth',
-      debugAuth: '/debug-auth'
+      debugAuth: '/debug-auth',
+      debugConfig: '/debug-config'
     },
     timestamp: new Date().toISOString()
   });
@@ -565,4 +612,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 MasterEverything.AI Server running on port ${PORT}`);
   console.log(`📍 Demo available at: http://localhost:${PORT}/demo`);
   console.log(`🔗 API available at: http://localhost:${PORT}/api/`);
+  console.log(`🐛 Debug config at: http://localhost:${PORT}/debug-config`);
 });
