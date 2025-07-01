@@ -30,19 +30,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Authorization endpoint
+// Authorization endpoint - Force OAuth flow
 app.get('/api/auth', (req, res) => {
-  if (!process.env.GOOGLE_REFRESH_TOKEN) {
-    const scopes = (process.env.GOOGLE_SCOPES || 'https://www.googleapis.com/auth/calendar').split(' ');
-    const authUrl = oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      prompt: 'consent',
-      scope: scopes
-    });
-    return res.redirect(authUrl);
-  } else {
-    return res.status(200).json({ message: 'Already authorized with a refresh token.' });
-  }
+  // Always generate auth URL when specifically requested via /api/auth
+  const scopes = (process.env.GOOGLE_SCOPES || 'https://www.googleapis.com/auth/calendar').split(' ');
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: scopes
+  });
+  return res.redirect(authUrl);
 });
 
 // OAuth callback
