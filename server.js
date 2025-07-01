@@ -529,17 +529,32 @@ app.get('/demo', (req, res) => {
   res.send(html);
 });
 
+// Debug OAuth endpoint - forces fresh auth flow
+app.get('/debug-auth', (req, res) => {
+  const scopes = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'];
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: scopes
+  });
+  console.log('Forcing OAuth flow - redirecting to:', authUrl);
+  return res.redirect(authUrl);
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'MasterEverything.AI Google Calendar API is running!',
     status: 'active',
+    refreshTokenExists: !!process.env.GOOGLE_REFRESH_TOKEN,
+    clientIdExists: !!process.env.GOOGLE_CLIENT_ID,
     endpoints: {
       health: '/api/health',
       events: '/api/events',
       createEvent: 'POST /api/events',
       demo: '/demo',
-      auth: '/api/auth'
+      auth: '/api/auth',
+      debugAuth: '/debug-auth'
     },
     timestamp: new Date().toISOString()
   });
