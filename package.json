@@ -1,19 +1,19 @@
 {
   "name": "google-calendar-mcp",
   "version": "1.0.0",
-  "description": "Google Calendar integration with OAuth2 and refresh token",
+  "description": "Google Calendar MCP Integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Adrian",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.6.7",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "googleapis": "^118.0.0"
+    "express": "^4.18.2",
+    "googleapis": "^134.0.0"
   }
 }
